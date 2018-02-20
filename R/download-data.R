@@ -14,7 +14,7 @@
 #' @export
 get_who_streets <- function (city = "kathmandu", n = 1)
 {
-    region_shape <- getbb(place_name = city, format_out = "polygon")
+    region_shape <- osmdata::getbb(place_name = city, format_out = "polygon")
     if (is.list (region_shape))
         region_shape <- region_shape [[1]]
 
@@ -57,7 +57,7 @@ get_who_streets <- function (city = "kathmandu", n = 1)
 #' @export
 get_who_buildings <- function (city = "kathmandu", n = 1)
 {
-    region_shape <- getbb(place_name = city, format_out = "polygon")
+    region_shape <- osmdata::getbb(place_name = city, format_out = "polygon")
     if (is.list (region_shape))
         region_shape <- region_shape [[1]]
 
@@ -98,6 +98,32 @@ get_who_buildings <- function (city = "kathmandu", n = 1)
     }
 
     invisible (dat_full)
+}
+
+#' get_who_busstops
+#'
+#' Extract OSM bus stops for given location (\code{city}), and save them in the
+#' data directory
+#'
+#' @param city Name of city for which bus stops are to be obtained
+#' @return The \pkg{sf}-formatted data object (invisibly)
+#'
+#' @export
+get_who_busstops <- function (city = "kathmandu")
+{
+    region_shape <- osmdata::getbb(place_name = city, format_out = "polygon")
+    if (is.list (region_shape))
+        region_shape <- region_shape [[1]]
+
+    dat <- osmdata::opq (bbox = city) %>%
+        osmdata::add_osm_feature (key = "highway", value = "bus_stop") %>%
+        osmdata::osmdata_sf (quiet = FALSE) %>%
+        osmdata::trim_osmdata (region_shape) %>%
+        magrittr::extract2 ("osm_points") # ignore polygon bus stops
+
+    write_who_data (dat, city = city, suffix = "bs")
+
+    invisible (dat)
 }
 
 # n is a number appended to file name when divided into chunks
