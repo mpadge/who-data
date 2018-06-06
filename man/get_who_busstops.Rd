@@ -14,5 +14,6 @@ The \pkg{sf}-formatted data object (invisibly)
 }
 \description{
 Extract OSM bus stops for given location (\code{city}), and save them in the
-data directory
+data directory. Note that coordinates only are extracted, because some bus
+facilitites are polygonal stations which are simply converted to centroids.
 }

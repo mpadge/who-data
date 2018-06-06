@@ -100,10 +100,42 @@ get_who_buildings <- function (city = "kathmandu", n = 1)
     invisible (dat_full)
 }
 
+lonlat2UTM <- function(lonlat)
+{                  
+    utm <- (floor ( (lonlat [1] + 180) / 6) %% 60) + 1   
+    if (lonlat [2] > 0)
+        utm + 32600
+    else               
+        utm + 32700                                      
+}                                                
+                                                     
+#' get_bus_polygon_centroids
+#'
+#' @param dat An \pkg{osmdata} object representing either \code{key = "bus"} or
+#' \code{key = "public_transport"}, both of which may return polygons
+#' representing bus stations or platforms
+#' @return Modified verion of input in which centroids of polygons have been
+#' added to the \code{$osm_points}.
+#' @export
+get_bus_polygon_centroids <- function (dat)
+{
+    polys <- dat$osm_polygons
+    # sample one point to determine UTM
+    utm <- lonlat2UTM (polys$geometry [[1]] [[1]] [1, ])
+    suppressWarnings ({
+        xy <- sf::st_transform (polys, utm) %>%
+            sf::st_centroid () %>%
+            sf::st_transform (., sf::st_crs (polys)$proj4string) %>%
+            sf::st_geometry ()
+    })
+    return (xy)
+}
+
 #' get_who_busstops
 #'
 #' Extract OSM bus stops for given location (\code{city}), and save them in the
-#' data directory
+#' data directory. Note that coordinates only are extracted, because some bus
+#' facilitites are polygonal stations which are simply converted to centroids.
 #'
 #' @param city Name of city for which bus stops are to be obtained
 #' @return The \pkg{sf}-formatted data object (invisibly)
@@ -115,11 +147,22 @@ get_who_busstops <- function (city = "kathmandu")
     if (is.list (region_shape))
         region_shape <- region_shape [[1]]
 
-    dat <- osmdata::opq (bbox = city) %>%
+    dat1 <- osmdata::opq (bbox = city) %>%
         osmdata::add_osm_feature (key = "highway", value = "bus_stop") %>%
         osmdata::osmdata_sf (quiet = FALSE) %>%
         osmdata::trim_osmdata (region_shape) %>%
-        magrittr::extract2 ("osm_points") # ignore polygon bus stops
+        magrittr::extract2 ("osm_points")
+    dat2 <- osmdata::opq (bbox = city) %>%
+        osmdata::add_osm_feature (key = "public_transport") %>%
+        osmdata::osmdata_sf (quiet = FALSE) %>%
+        get_bus_polygon_centroids ()
+    dat3 <- osmdata::opq (bbox = city) %>%
+        osmdata::add_osm_feature (key = "bus") %>%
+        osmdata::osmdata_sf (quiet = FALSE) %>%
+        get_bus_polygon_centroids ()
+
+    dat <- c (dat1$geometry, dat2, dat3)
+    dat <- dat [!duplicated (dat)]
 
     write_who_data (dat, city = city, suffix = "bs")
 
