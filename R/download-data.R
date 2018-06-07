@@ -157,15 +157,21 @@ get_who_busstops <- function (city = "kathmandu")
         osmdata::trim_osmdata (region_shape) %>%
         magrittr::extract2 ("osm_points")
     dat2 <- osmdata::opq (bbox = city) %>%
+        osmdata::add_osm_feature (key = "public_transport",
+                                  value = "stop_position") %>%
+        osmdata::osmdata_sf (quiet = FALSE) %>%
+        osmdata::trim_osmdata (region_shape) %>%
+        magrittr::extract2 ("osm_points")
+    dat3 <- osmdata::opq (bbox = city) %>%
         osmdata::add_osm_feature (key = "public_transport") %>%
         osmdata::osmdata_sf (quiet = FALSE) %>%
         get_bus_polygon_centroids ()
-    dat3 <- osmdata::opq (bbox = city) %>%
+    dat4 <- osmdata::opq (bbox = city) %>%
         osmdata::add_osm_feature (key = "bus") %>%
         osmdata::osmdata_sf (quiet = FALSE) %>%
         get_bus_polygon_centroids ()
 
-    dat <- c (dat1$geometry, dat2, dat3)
+    dat <- c (dat1$geometry, dat2$geometry, dat3, dat4)
     dat <- dat [!duplicated (dat)]
 
     write_who_data (dat, city = city, suffix = "bs")
