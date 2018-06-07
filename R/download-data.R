@@ -120,14 +120,18 @@ lonlat2UTM <- function(lonlat)
 get_bus_polygon_centroids <- function (dat)
 {
     polys <- dat$osm_polygons
-    # sample one point to determine UTM
-    utm <- lonlat2UTM (polys$geometry [[1]] [[1]] [1, ])
-    suppressWarnings ({
-        xy <- sf::st_transform (polys, utm) %>%
-            sf::st_centroid () %>%
-            sf::st_transform (., sf::st_crs (polys)$proj4string) %>%
-            sf::st_geometry ()
-    })
+    xy <- NULL
+    if (nrow (polys) > 0)
+    {
+        # sample one point to determine UTM
+        utm <- lonlat2UTM (polys$geometry [[1]] [[1]] [1, ])
+        suppressWarnings ({
+            xy <- sf::st_transform (polys, utm) %>%
+                sf::st_centroid () %>%
+                sf::st_transform (., sf::st_crs (polys)$proj4string) %>%
+                sf::st_geometry ()
+        })
+    }
     return (xy)
 }
 
