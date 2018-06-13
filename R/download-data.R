@@ -14,6 +14,7 @@
 #' @export
 get_who_streets <- function (city = "kathmandu", n = 1)
 {
+    is_sf_loaded ()
     region_shape <- osmdata::getbb(place_name = city, format_out = "polygon")
     if (is.list (region_shape))
         region_shape <- region_shape [[1]]
@@ -57,6 +58,7 @@ get_who_streets <- function (city = "kathmandu", n = 1)
 #' @export
 get_who_buildings <- function (city = "kathmandu", n = 1)
 {
+    is_sf_loaded ()
     region_shape <- osmdata::getbb(place_name = city, format_out = "polygon")
     if (is.list (region_shape))
         region_shape <- region_shape [[1]]
@@ -226,3 +228,11 @@ file_number_ext <- function (n)
     }
     return (np)
 }
+
+is_sf_loaded <- function ()
+{
+    if (!any (grepl ("package:sf", search ())))
+        message ("It is generally necessary to pre-load the sf package ",
+                 "for this functions to work correctly")
+}
+
